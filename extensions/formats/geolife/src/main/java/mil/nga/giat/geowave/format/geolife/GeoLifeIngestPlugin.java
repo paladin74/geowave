@@ -302,4 +302,11 @@ public class GeoLifeIngestPlugin extends
 					parentPlugin);
 		}
 	}
+
+	@Override
+	public WholeFile[] toAvroObjects(
+			byte[] avroBytes ) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

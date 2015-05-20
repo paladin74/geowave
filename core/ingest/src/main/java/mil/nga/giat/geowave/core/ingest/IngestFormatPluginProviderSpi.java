@@ -2,6 +2,7 @@ package mil.nga.giat.geowave.core.ingest;
 
 import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestFromHdfsPlugin;
+import mil.nga.giat.geowave.core.ingest.kafka.IngestFromKafkaPlugin;
 import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
 
 /**

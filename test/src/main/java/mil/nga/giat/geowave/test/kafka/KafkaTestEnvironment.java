@@ -1,16 +1,15 @@
 package mil.nga.giat.geowave.test.kafka;
 
+import java.io.File;
 import java.util.Properties;
 
-import kafka.admin.AdminUtils;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import mil.nga.giat.geowave.core.cli.GeoWaveMain;
+import mil.nga.giat.geowave.core.ingest.kafka.KafkaCommandLineOptions;
 import mil.nga.giat.geowave.test.GeoWaveTestEnvironment;
 
-import org.I0Itec.zkclient.ZkClient;
 import org.apache.commons.lang.StringUtils;
-import org.apache.curator.test.TestingServer;
 import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -21,14 +20,16 @@ abstract public class KafkaTestEnvironment extends
 {
 	private final static Logger LOGGER = Logger.getLogger(KafkaTestEnvironment.class);
 
-	protected static String KAFKA_TEST_TOPIC = "gpxtesttopic";
 	protected static KafkaServerStartable kafkaServer;
-	protected static TestingServer zkServer;
-	protected static ZkClient zkClient;
+
+	protected static String KAFKA_TEST_TOPIC = "gpxtesttopic";
+	public static final File DEFAULT_LOG_DIR = new File(
+			TEMP_DIR,
+			"kafka-logs");
 
 	protected void testKafkaStage(
 			final String ingestFilePath ) {
-		LOGGER.warn("Ingesting '" + ingestFilePath + "' - this may take several minutes...");
+		LOGGER.warn("Staging '" + ingestFilePath + "' to a Kafka topic - this may take several minutes...");
 		String[] args = null;
 		synchronized (MUTEX) {
 			args = StringUtils.split(
@@ -42,77 +43,73 @@ abstract public class KafkaTestEnvironment extends
 	@BeforeClass
 	public static void setupKafkaServer()
 			throws Exception {
-
-		GeoWaveTestEnvironment.setup();
-		zkServer = new TestingServer();
-		final KafkaConfig config = getKafkaConfig(zkServer.getConnectString());
+		final String zkConnection = miniAccumulo.getZooKeepers();
+		final KafkaConfig config = getKafkaConfig(zkConnection);
 		kafkaServer = new KafkaServerStartable(
 				config);
-		zkClient = new ZkClient(
-				zkServer.getConnectString());
 
 		kafkaServer.startup();
 
-		AdminUtils.createTopic(
-				zkClient,
-				KAFKA_TEST_TOPIC,
-				1,
-				1,
-				new Properties());
+		// setup producer props
+		setupKafkaProducerProps(zkConnection);
+	}
+
+	private static KafkaConfig getKafkaConfig(
+			final String zkConnectString ) {
+		final Properties props = new Properties();
+//		props.put(
+//				"log.dir",
+//				DEFAULT_LOG_DIR.getAbsolutePath());
+		props.put(
+				"zookeeper.connect",
+				zkConnectString);
+		props.put(
+				"broker.id",
+				"0");
+		props.put(
+				"message.max.bytes",
+				"5000000");
+		props.put(
+				"replica.fetch.max.bytes",
+				"5000000");
+		return new KafkaConfig(
+				props);
 	}
 
 	@AfterClass
 	public static void stopKafkaServer()
 			throws Exception {
-
-		AdminUtils.deleteTopic(
-				zkClient,
-				KAFKA_TEST_TOPIC);
-
 		kafkaServer.shutdown();
-		zkServer.stop();
-
+//		DEFAULT_LOG_DIR.deleteOnExit();
 	}
 
-	private static KafkaConfig getKafkaConfig(
-			final String zkConnectString ) {
-
-		final Properties config = new Properties();
-		config.put(
-				"metadata.broker.list",
-				"localhost:9092");
+	private static void setupKafkaProducerProps(
+			String zkConnectString ) {
 		System.getProperties().put(
 				"metadata.broker.list",
 				"localhost:9092");
-		config.put(
-				"zookeeper.hosts",
-				zkConnectString);
-		System.getProperties().put(
-				"zookeeper.hosts",
-				zkConnectString);
-		config.put(
-				"zookeeper.connect",
-				zkConnectString);
 		System.getProperties().put(
 				"zookeeper.connect",
 				zkConnectString);
-		config.put(
-				"broker.id",
-				"1");
 		System.getProperties().put(
-				"broker.id",
-				"1");
-		config.put(
-				"serializer.class",
-				"mil.nga.giat.geowave.core.ingest.kafka.AvroKafkaEncoder");
+				"message.max.bytes",
+				"5000000");
 		System.getProperties().put(
 				"serializer.class",
 				"mil.nga.giat.geowave.core.ingest.kafka.AvroKafkaEncoder");
 
-		final KafkaConfig kafkaConfig = new KafkaConfig(
-				config);
-
-		return kafkaConfig;
+		KafkaCommandLineOptions.getProperties().put(
+				"metadata.broker.list",
+				"localhost:9092");
+		KafkaCommandLineOptions.getProperties().put(
+				"zookeeper.connect",
+				zkConnectString);
+		KafkaCommandLineOptions.getProperties().put(
+				"max.message.size",
+				"5000000");
+		KafkaCommandLineOptions.getProperties().put(
+				"serializer.class",
+				"mil.nga.giat.geowave.core.ingest.kafka.AvroKafkaEncoder");
 	}
 
 }

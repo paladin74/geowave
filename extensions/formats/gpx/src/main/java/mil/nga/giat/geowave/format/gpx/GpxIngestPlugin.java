@@ -290,4 +290,11 @@ public class GpxIngestPlugin extends
 		}
 	}
 
+	@Override
+	public GpxTrack[] toAvroObjects(
+			byte[] avroBytes ) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

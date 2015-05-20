@@ -16,14 +16,15 @@ public class KafkaCommandLineOptions
 {
 
 	private final static Logger LOGGER = Logger.getLogger(KafkaCommandLineOptions.class);
-	private final static String[] kafkaProperties = {
+	private final static String[] kafkaProducerProperties = {
 		"metadata.broker.list",
-		"zookeeper.hosts",
+		"zookeeper.connect",
 		"serializer.class"
 	};
+	
 	private final String kafkaTopic;
 	private final String kafkaPropertiesPath;
-	protected static Properties properties;
+	protected static Properties properties = new Properties();
 
 	public KafkaCommandLineOptions(
 			final String kafkaTopic,
@@ -53,6 +54,7 @@ public class KafkaCommandLineOptions
 	}
 
 	public static Properties getProperties() {
+		
 		return properties;
 	}
 
@@ -71,11 +73,14 @@ public class KafkaCommandLineOptions
 		if (kafkaPropertiesPath == null) {
 			final StringBuffer buffer = new StringBuffer();
 			buffer.append("Kafka properties file not provided, will check system properties for the following:\n");
-			for (final String kafkaProp : kafkaProperties) {
+			for (final String kafkaProp : kafkaProducerProperties) {
 				buffer.append("\t" + kafkaProp + "\n");
 			}
 			LOGGER.warn(buffer.toString());
 			success = checkForKafkaProperties();
+			if (success) {
+				LOGGER.info("Kafka properties were found in System properties, continuing...");
+			}
 		}
 		else {
 			success = readAndVerifyProperties(kafkaPropertiesPath);
@@ -93,7 +98,6 @@ public class KafkaCommandLineOptions
 
 	private static boolean readAndVerifyProperties(
 			final String kafkaPropertiesPath ) {
-		properties = new Properties();
 		try {
 			final InputStreamReader inputStreamReader = new InputStreamReader(
 					new FileInputStream(
@@ -118,7 +122,8 @@ public class KafkaCommandLineOptions
 
 	private static boolean checkForKafkaProperties() {
 		boolean success = true;
-		for (final String kafkaProp : kafkaProperties) {
+
+		for (final String kafkaProp : kafkaProducerProperties) {
 			final String property = System.getProperty(kafkaProp);
 			if (property == null) {
 				LOGGER.error("missing " + kafkaProp + " property");

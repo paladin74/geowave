@@ -241,4 +241,11 @@ public class TdriveIngestPlugin extends
 					parentPlugin);
 		}
 	}
+
+	@Override
+	public TdrivePoint[] toAvroObjects(
+			byte[] avroBytes ) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
