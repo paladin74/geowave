@@ -1,13 +1,11 @@
 package mil.nga.giat.geowave.core.ingest.kafka;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
@@ -21,13 +19,11 @@ import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.AbstractMapReduceIngest;
 
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 /**
@@ -40,11 +36,45 @@ public class IngestFromKafkaDriver<T> extends
 	private final static Logger LOGGER = Logger.getLogger(IngestFromKafkaDriver.class);
 	private KafkaCommandLineOptions kafkaOptions;
 	private AccumuloCommandLineOptions accumuloOptions;
+	private static ExecutorService singletonExecutor;
+	private static int DEFAULT_NUM_CONCURRENT_CONSUMERS = 5;
 
 	public IngestFromKafkaDriver(
 			final String operation ) {
 		super(
 				operation);
+	}
+
+	private synchronized ExecutorService getSingletonExecutorService() {
+		if ((singletonExecutor == null) || singletonExecutor.isShutdown()) {
+			singletonExecutor = Executors.newFixedThreadPool(DEFAULT_NUM_CONCURRENT_CONSUMERS);
+		}
+		return singletonExecutor;
+	}
+
+	private void configureAndRunPluginConsumer(
+			final StageToAvroPlugin stageToAvroPlugin )
+			throws Exception {
+		final ExecutorService executorService = getSingletonExecutorService();
+		executorService.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					ConsumerConnector consumer = buildKafkaConsumer();
+					consumeFromTopic(
+							stageToAvroPlugin,
+							consumer,
+							kafkaOptions.getKafkaTopic(),
+							stageToAvroPlugin.getAvroSchemaForHdfsType());
+				}
+				catch (final Exception e) {
+					LOGGER.error(
+							"Error setting up Kafka consumer for topic [" + kafkaOptions.getKafkaTopic() + "]",
+							e);
+				}
+			}
+		});
 	}
 
 	@Override
@@ -70,6 +100,8 @@ public class IngestFromKafkaDriver<T> extends
 						continue;
 					}
 
+					configureAndRunPluginConsumer(stageToAvroPlugin);
+
 				}
 				catch (final UnsupportedOperationException e) {
 					LOGGER.warn(
@@ -77,7 +109,6 @@ public class IngestFromKafkaDriver<T> extends
 							e);
 					continue;
 				}
-
 			}
 		}
 		catch (final Exception e) {
@@ -88,7 +119,7 @@ public class IngestFromKafkaDriver<T> extends
 	}
 
 	private ConsumerConnector buildKafkaConsumer() {
-		Properties props = new Properties();
+		final Properties props = new Properties();
 		props.put(
 				"zookeeper.connect",
 				KafkaCommandLineOptions.getProperties().get(
@@ -100,36 +131,42 @@ public class IngestFromKafkaDriver<T> extends
 		props.put(
 				"fetch.message.max.bytes",
 				"5000000");
-		ConsumerConnector consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(
+		final ConsumerConnector consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(
 				props));
 
 		return consumer;
 	}
 
 	public void consumeFromTopic(
-			StageToAvroPlugin<T> stageToAvroPlugin,
-			ConsumerConnector consumer,
+			final StageToAvroPlugin<T> stageToAvroPlugin,
+			final ConsumerConnector consumer,
 			final String topic,
-			final Schema _schema ) {
-		Map<String, Integer> topicCount = new HashMap<>();
+			final Schema _schema )
+			throws Exception {
+		if (consumer == null) {
+			throw new Exception(
+					"Kafka consumer connector is null, unable to create message streams");
+		}
+		final Map<String, Integer> topicCount = new HashMap<>();
 		topicCount.put(
 				topic,
 				1);
-		Map<String, List<KafkaStream<byte[], byte[]>>> consumerStreams = consumer.createMessageStreams(topicCount);
-		List<KafkaStream<byte[], byte[]>> streams = consumerStreams.get(topic);
+		final Map<String, List<KafkaStream<byte[], byte[]>>> consumerStreams = consumer.createMessageStreams(topicCount);
+		final List<KafkaStream<byte[], byte[]>> streams = consumerStreams.get(topic);
 		for (final KafkaStream stream : streams) {
-			ConsumerIterator<byte[], byte[]> it = stream.iterator();
+			final ConsumerIterator<byte[], byte[]> it = stream.iterator();
 			while (it.hasNext()) {
-				byte[] msg = it.next().message();
+				final byte[] msg = it.next().message();
 				// GenericData.Record schema = deserialize(
 				// msg,
 				// _schema);
-				T[] dataRecords = stageToAvroPlugin.toAvroObjects(msg);
+				final T[] dataRecords = stageToAvroPlugin.toAvroObjects(msg);
+				System.out.println("found it....");
+				// shove datarecords into avro
 			}
 		}
-		if (consumer != null) {
-			consumer.shutdown();
-		}
+		consumer.shutdown();
+
 	}
 
 	@Override

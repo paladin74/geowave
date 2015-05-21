@@ -28,7 +28,7 @@ public interface StageToAvroPlugin<T> extends
 	 */
 	public T[] toAvroObjects(
 			File f );
-	
+
 	public T[] toAvroObjects(
 			byte[] avroBytes );
 }

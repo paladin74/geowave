@@ -21,7 +21,7 @@ public class KafkaCommandLineOptions
 		"zookeeper.connect",
 		"serializer.class"
 	};
-	
+
 	private final String kafkaTopic;
 	private final String kafkaPropertiesPath;
 	protected static Properties properties = new Properties();
@@ -54,7 +54,7 @@ public class KafkaCommandLineOptions
 	}
 
 	public static Properties getProperties() {
-		
+
 		return properties;
 	}
 
