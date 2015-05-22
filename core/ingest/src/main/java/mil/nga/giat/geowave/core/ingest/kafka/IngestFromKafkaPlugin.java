@@ -1,5 +1,6 @@
 package mil.nga.giat.geowave.core.ingest.kafka;
 
+import mil.nga.giat.geowave.core.ingest.IngestPluginBase;
 import mil.nga.giat.geowave.core.ingest.avro.AvroPluginBase;
 import mil.nga.giat.geowave.core.store.index.Index;
 
@@ -19,7 +20,8 @@ import mil.nga.giat.geowave.core.store.index.Index;
  *            the type that represents each data entry being ingested
  */
 public interface IngestFromKafkaPlugin<I, O> extends
-		AvroPluginBase
+		AvroPluginBase,
+		IngestPluginBase<I, O>
 {
 
 	// /**
@@ -72,5 +74,11 @@ public interface IngestFromKafkaPlugin<I, O> extends
 	 *         implementation
 	 */
 	public Index[] getRequiredIndices();
+
+	// public CloseableIterator<GeoWaveData<O>> toGeoWaveData(
+	// K key,
+	// ByteArrayId primaryIndexId,
+	// String globalVisibility,
+	// Iterable<V> values );
 
 }

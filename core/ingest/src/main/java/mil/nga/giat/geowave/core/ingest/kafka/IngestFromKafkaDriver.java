@@ -16,21 +16,20 @@ import mil.nga.giat.geowave.core.ingest.AbstractIngestCommandLineDriver;
 import mil.nga.giat.geowave.core.ingest.AccumuloCommandLineOptions;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
 import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
-import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.AbstractMapReduceIngest;
 
 import org.apache.avro.Schema;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 /**
  * This class executes the ingestion of intermediate data from a Kafka topic
  * into GeoWave.
+ * 
+ * @param <AbstractSimpleFeatureIngestPlugin>
  */
-public class IngestFromKafkaDriver<T> extends
+public class IngestFromKafkaDriver<I> extends
 		AbstractIngestCommandLineDriver
 {
 	private final static Logger LOGGER = Logger.getLogger(IngestFromKafkaDriver.class);
@@ -53,6 +52,7 @@ public class IngestFromKafkaDriver<T> extends
 	}
 
 	private void configureAndRunPluginConsumer(
+			final IngestFormatPluginProviderSpi<?, ?> pluginProvider,
 			final StageToAvroPlugin stageToAvroPlugin )
 			throws Exception {
 		final ExecutorService executorService = getSingletonExecutorService();
@@ -63,6 +63,7 @@ public class IngestFromKafkaDriver<T> extends
 				try {
 					ConsumerConnector consumer = buildKafkaConsumer();
 					consumeFromTopic(
+							pluginProvider,
 							stageToAvroPlugin,
 							consumer,
 							kafkaOptions.getKafkaTopic(),
@@ -100,7 +101,9 @@ public class IngestFromKafkaDriver<T> extends
 						continue;
 					}
 
-					configureAndRunPluginConsumer(stageToAvroPlugin);
+					configureAndRunPluginConsumer(
+							pluginProvider,
+							stageToAvroPlugin);
 
 				}
 				catch (final UnsupportedOperationException e) {
@@ -138,7 +141,8 @@ public class IngestFromKafkaDriver<T> extends
 	}
 
 	public void consumeFromTopic(
-			final StageToAvroPlugin<T> stageToAvroPlugin,
+			final IngestFormatPluginProviderSpi<?, ?> pluginProvider,
+			final StageToAvroPlugin<I> stageToAvroPlugin,
 			final ConsumerConnector consumer,
 			final String topic,
 			final Schema _schema )
@@ -160,8 +164,22 @@ public class IngestFromKafkaDriver<T> extends
 				// GenericData.Record schema = deserialize(
 				// msg,
 				// _schema);
-				final T[] dataRecords = stageToAvroPlugin.toAvroObjects(msg);
+				final I[] dataRecords = stageToAvroPlugin.toAvroObjects(msg);
 				System.out.println("found it....");
+				for(I dataRecord : dataRecords) {
+//				pluginProvider.getIngestFromHdfsPlugin().ingestWithMapper().toGeoWaveData(
+//						dataRecord,
+//						null,
+//						accumuloOptions.getVisibility());
+				}
+				// AbstractSimpleFeatureIngestPlugin
+				// pluginProvider.getLocalFileIngestPlugin().toGeoWaveData(null,
+				// pluginProvider.getStageToAvroPlugin(null, null);
+				//
+				// now looking to ingest directly into accumulo
+				//
+				// now we need to push it to geowave data
+				//
 				// shove datarecords into avro
 			}
 		}
