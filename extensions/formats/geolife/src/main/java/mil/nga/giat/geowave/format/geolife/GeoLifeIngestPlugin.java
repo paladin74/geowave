@@ -119,8 +119,13 @@ public class GeoLifeIngestPlugin extends
 	}
 
 	@Override
-	public Schema getAvroSchemaForHdfsType() {
+	public Schema getAvroSchema() {
 		return WholeFile.getClassSchema();
+	}
+	
+	@Override
+	public Schema getAvroSchemaForHdfsType() {
+		return getAvroSchema();
 	}
 
 	@Override
@@ -309,4 +314,5 @@ public class GeoLifeIngestPlugin extends
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 }

@@ -103,8 +103,13 @@ public class TdriveIngestPlugin extends
 	}
 
 	@Override
-	public Schema getAvroSchemaForHdfsType() {
+	public Schema getAvroSchema() {
 		return TdrivePoint.getClassSchema();
+	}
+	
+	@Override
+	public Schema getAvroSchemaForHdfsType() {
+		return getAvroSchema();
 	}
 
 	@Override

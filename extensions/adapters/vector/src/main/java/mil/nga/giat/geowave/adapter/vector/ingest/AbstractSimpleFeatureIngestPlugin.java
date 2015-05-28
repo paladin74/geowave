@@ -23,7 +23,7 @@ import com.google.common.collect.Iterators;
 
 abstract public class AbstractSimpleFeatureIngestPlugin<I> implements
 		LocalFileIngestPlugin<SimpleFeature>,
-		IngestFromHdfsPlugin<I, SimpleFeature>,
+		IngestFromHdfsPlugin<I, SimpleFeature>,		
 		StageToAvroPlugin<I>,
 		Persistable
 {

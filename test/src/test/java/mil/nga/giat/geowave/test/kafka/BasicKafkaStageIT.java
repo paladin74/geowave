@@ -12,20 +12,20 @@ public class BasicKafkaStageIT extends
 
 	protected static final String ZOOKEEPER_URL = "localhost:2181";
 
-	@Test
-	public void testBasicStageGpx()
-			throws Exception {
-
-		testKafkaStage(OSM_GPX_INPUT_DIR);
-	}
-
 	// @Test
-	// public void testBasicIngestGpx()
+	// public void testBasicStageGpx()
 	// throws Exception {
 	//
-	// testKafkaIngest(
-	// IndexType.SPATIAL_VECTOR,
-	// OSM_GPX_INPUT_DIR);
-	//
+	// testKafkaStage(OSM_GPX_INPUT_DIR);
 	// }
+
+	@Test
+	public void testBasicIngestGpx()
+			throws Exception {
+
+		testKafkaIngest(
+				IndexType.SPATIAL_VECTOR,
+				OSM_GPX_INPUT_DIR);
+
+	}
 }

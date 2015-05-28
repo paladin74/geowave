@@ -1,7 +1,6 @@
 package mil.nga.giat.geowave.core.ingest.kafka;
 
 import mil.nga.giat.geowave.core.ingest.IngestPluginBase;
-import mil.nga.giat.geowave.core.ingest.avro.AvroPluginBase;
 import mil.nga.giat.geowave.core.store.index.Index;
 
 /**
@@ -20,35 +19,8 @@ import mil.nga.giat.geowave.core.store.index.Index;
  *            the type that represents each data entry being ingested
  */
 public interface IngestFromKafkaPlugin<I, O> extends
-		AvroPluginBase,
 		IngestPluginBase<I, O>
 {
-
-	// /**
-	// * An implementation of ingestion that can be persisted to a mapper within
-	// * the map-reduce job configuration to perform an ingest of data into
-	// * GeoWave from intermediate data
-	// *
-	// * @return The implementation for ingestion with only a mapper
-	// */
-	// public IngestWithMapper<I, O> ingestWithMapper();
-	//
-	// /**
-	// * An implementation of ingestion that can be persisted to a mapper and
-	// * reducer within the map-reduce job configuration to aggregate
-	// intermediate
-	// * data by defined keys within a reducer and perform an ingest of data
-	// into
-	// * GeoWave from the key-value pairs emitted by the mapper.
-	// *
-	// * @return The implementation for ingestion with a mapper and reducer. It
-	// is
-	// * important to provide the correct concrete implementation of Key
-	// * and Value classes within the appropriate generics because the
-	// * framework will use reflection to set the key and value classes
-	// * for map-reduce.
-	// */
-	// public IngestWithReducer<I, ?, ?, O> ingestWithReducer();
 
 	/**
 	 * Get an array of indices that are supported by this ingestion
@@ -75,10 +47,5 @@ public interface IngestFromKafkaPlugin<I, O> extends
 	 */
 	public Index[] getRequiredIndices();
 
-	// public CloseableIterator<GeoWaveData<O>> toGeoWaveData(
-	// K key,
-	// ByteArrayId primaryIndexId,
-	// String globalVisibility,
-	// Iterable<V> values );
 
 }

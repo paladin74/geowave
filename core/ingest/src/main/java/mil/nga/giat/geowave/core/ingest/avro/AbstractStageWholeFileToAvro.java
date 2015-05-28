@@ -18,7 +18,7 @@ abstract public class AbstractStageWholeFileToAvro implements
 	private final static Logger LOGGER = Logger.getLogger(AbstractStageWholeFileToAvro.class);
 
 	@Override
-	public Schema getAvroSchemaForHdfsType() {
+	public Schema getAvroSchema() {
 		return WholeFile.getClassSchema();
 	}
 

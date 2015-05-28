@@ -21,6 +21,7 @@ import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.ingest.GeoWaveData;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithMapper;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithReducer;
+import mil.nga.giat.geowave.core.ingest.kafka.GenericAvroSerializer;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.adapter.WritableDataAdapter;
 import mil.nga.giat.geowave.core.store.data.field.FieldVisibilityHandler;
@@ -56,6 +57,7 @@ public class GpxIngestPlugin extends
 			0);
 
 	private final Index[] supportedIndices;
+	private final GenericAvroSerializer<GpxTrack> serializer = new GenericAvroSerializer<GpxTrack>();
 
 	public GpxIngestPlugin() {
 		supportedIndices = new Index[] {
@@ -154,8 +156,13 @@ public class GpxIngestPlugin extends
 	}
 
 	@Override
-	public Schema getAvroSchemaForHdfsType() {
+	public Schema getAvroSchema() {
 		return GpxTrack.getClassSchema();
+	}
+	
+	@Override
+	public Schema getAvroSchemaForHdfsType() {
+		return getAvroSchema();
 	}
 
 	@Override
@@ -294,7 +301,12 @@ public class GpxIngestPlugin extends
 	public GpxTrack[] toAvroObjects(
 			byte[] avroBytes ) {
 		// TODO Auto-generated method stub
-		return null;
+		final GpxTrack track = serializer.deserialize(
+				avroBytes,
+				GpxTrack.getClassSchema());
+		return new GpxTrack[] {
+			track
+		};
 	}
 
 }

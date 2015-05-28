@@ -6,7 +6,9 @@ import java.util.Properties;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import mil.nga.giat.geowave.core.cli.GeoWaveMain;
+import mil.nga.giat.geowave.core.geotime.IndexType;
 import mil.nga.giat.geowave.core.ingest.kafka.KafkaCommandLineOptions;
+import mil.nga.giat.geowave.core.store.index.Index;
 import mil.nga.giat.geowave.test.GeoWaveTestEnvironment;
 
 import org.apache.commons.lang.StringUtils;
@@ -40,6 +42,28 @@ abstract public class KafkaTestEnvironment extends
 		GeoWaveMain.main(args);
 	}
 
+	protected void testKafkaIngest(
+			IndexType indexType,
+			final String ingestFilePath ) {
+		// LOGGER.warn("Staging '" + ingestFilePath +
+		// "' to a Kafka topic - this may take several minutes...");
+		// String[] args = null;
+		// synchronized (MUTEX) {
+		// args = StringUtils.split(
+		// "-kafkastage -kafkatopic " + KAFKA_TEST_TOPIC + " -f gpx -b " +
+		// ingestFilePath,
+		// ' ');
+		// }
+		//
+		// GeoWaveMain.main(args);
+
+		LOGGER.warn("Ingesting '" + ingestFilePath + "' - this may take several minutes...");
+		final String[] args = StringUtils.split(
+				"-kafkaingest -kafkatopic " + KAFKA_TEST_TOPIC + " -f gpx -z " + zookeeper + " -i " + accumuloInstance + " -u " + accumuloUser + " -p " + accumuloPassword + " -n " + TEST_NAMESPACE + " -dim " + (indexType.equals(IndexType.SPATIAL_VECTOR) ? "spatial" : "spatial-temporal"),
+				' ');
+		GeoWaveMain.main(args);
+	}
+
 	@BeforeClass
 	public static void setupKafkaServer()
 			throws Exception {
@@ -57,9 +81,9 @@ abstract public class KafkaTestEnvironment extends
 	private static KafkaConfig getKafkaConfig(
 			final String zkConnectString ) {
 		final Properties props = new Properties();
-//		props.put(
-//				"log.dir",
-//				DEFAULT_LOG_DIR.getAbsolutePath());
+		// props.put(
+		// "log.dir",
+		// DEFAULT_LOG_DIR.getAbsolutePath());
 		props.put(
 				"zookeeper.connect",
 				zkConnectString);
@@ -80,7 +104,7 @@ abstract public class KafkaTestEnvironment extends
 	public static void stopKafkaServer()
 			throws Exception {
 		kafkaServer.shutdown();
-//		DEFAULT_LOG_DIR.deleteOnExit();
+		// DEFAULT_LOG_DIR.deleteOnExit();
 	}
 
 	private static void setupKafkaProducerProps(

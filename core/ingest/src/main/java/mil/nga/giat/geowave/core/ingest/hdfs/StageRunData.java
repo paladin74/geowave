@@ -60,7 +60,7 @@ public class StageRunData
 						hdfsBaseDirectory,
 						typeName));
 				dfw.create(
-						plugin.getAvroSchemaForHdfsType(),
+						plugin.getAvroSchema(),
 						out);
 
 			}
