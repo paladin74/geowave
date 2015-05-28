@@ -9,6 +9,7 @@ import java.util.Map;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
+import mil.nga.giat.geowave.core.ingest.avro.AvroFormatPlugin;
 import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.local.AbstractLocalFileDriver;
 
@@ -23,7 +24,7 @@ import org.apache.log4j.Logger;
  * the available type plugin providers that are discovered through SPI.
  */
 public class StageToKafkaDriver<T extends SpecificRecordBase> extends
-		AbstractLocalFileDriver<StageToAvroPlugin<?>, StageKafkaData<?>>
+		AbstractLocalFileDriver<AvroFormatPlugin<?>, StageKafkaData<?>>
 {
 	private final static Logger LOGGER = Logger.getLogger(StageToKafkaDriver.class);
 	private KafkaCommandLineOptions kafkaOptions;
@@ -55,7 +56,7 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 	protected void processFile(
 			final File file,
 			final String typeName,
-			final StageToAvroPlugin<?> plugin,
+			final AvroFormatPlugin<?> plugin,
 			final StageKafkaData<?> runData ) {
 
 		try {
@@ -80,11 +81,11 @@ public class StageToKafkaDriver<T extends SpecificRecordBase> extends
 			final String[] args,
 			final List<IngestFormatPluginProviderSpi<?, ?>> pluginProviders ) {
 
-		final Map<String, StageToAvroPlugin<?>> stageToKafkaPlugins = new HashMap<String, StageToAvroPlugin<?>>();
+		final Map<String, AvroFormatPlugin<?>> stageToKafkaPlugins = new HashMap<String, AvroFormatPlugin<?>>();
 		for (final IngestFormatPluginProviderSpi<?, ?> pluginProvider : pluginProviders) {
-			StageToAvroPlugin<?> stageToKafkaPlugin = null;
+			AvroFormatPlugin<?> stageToKafkaPlugin = null;
 			try {
-				stageToKafkaPlugin = pluginProvider.getStageToAvroPlugin();
+				stageToKafkaPlugin = pluginProvider.getAvroFormatPlugin();
 
 				if (stageToKafkaPlugin == null) {
 					LOGGER.warn("Plugin provider for ingest type '" + pluginProvider.getIngestFormatName() + "' does not support staging to HDFS");

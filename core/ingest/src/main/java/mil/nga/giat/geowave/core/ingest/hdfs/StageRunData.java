@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import mil.nga.giat.geowave.core.ingest.avro.AvroFormatPlugin;
 import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 
 import org.apache.avro.file.CodecFactory;
@@ -34,7 +35,7 @@ public class StageRunData
 
 	public DataFileWriter getWriter(
 			final String typeName,
-			final StageToAvroPlugin plugin ) {
+			final AvroFormatPlugin plugin ) {
 		return getDataWriterCreateIfNull(
 				typeName,
 				plugin);
@@ -42,7 +43,7 @@ public class StageRunData
 
 	private synchronized DataFileWriter getDataWriterCreateIfNull(
 			final String typeName,
-			final StageToAvroPlugin plugin ) {
+			final AvroFormatPlugin plugin ) {
 		if (!cachedWriters.containsKey(typeName)) {
 			FSDataOutputStream out = null;
 			final DataFileWriter dfw = new DataFileWriter(

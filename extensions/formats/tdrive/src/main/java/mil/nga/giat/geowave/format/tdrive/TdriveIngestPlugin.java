@@ -18,6 +18,7 @@ import mil.nga.giat.geowave.core.geotime.IndexType;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.index.StringUtils;
 import mil.nga.giat.geowave.core.ingest.GeoWaveData;
+import mil.nga.giat.geowave.core.ingest.avro.IngestWithAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithMapper;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithReducer;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
@@ -106,7 +107,7 @@ public class TdriveIngestPlugin extends
 	public Schema getAvroSchema() {
 		return TdrivePoint.getClassSchema();
 	}
-	
+
 	@Override
 	public Schema getAvroSchemaForHdfsType() {
 		return getAvroSchema();
@@ -252,5 +253,11 @@ public class TdriveIngestPlugin extends
 			byte[] avroBytes ) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public IngestWithAvroPlugin<TdrivePoint, SimpleFeature> getIngestWithAvroPlugin() {
+		return new IngestTdrivePointFromHdfs(
+				this);
 	}
 }

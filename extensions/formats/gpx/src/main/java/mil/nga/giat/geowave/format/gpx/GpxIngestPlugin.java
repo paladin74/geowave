@@ -19,6 +19,7 @@ import mil.nga.giat.geowave.adapter.vector.ingest.AbstractSimpleFeatureIngestPlu
 import mil.nga.giat.geowave.core.geotime.IndexType;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.ingest.GeoWaveData;
+import mil.nga.giat.geowave.core.ingest.avro.IngestWithAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithMapper;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithReducer;
 import mil.nga.giat.geowave.core.ingest.kafka.GenericAvroSerializer;
@@ -307,6 +308,12 @@ public class GpxIngestPlugin extends
 		return new GpxTrack[] {
 			track
 		};
+	}
+
+	@Override
+	public IngestWithAvroPlugin<GpxTrack, SimpleFeature> getIngestWithAvroPlugin() {
+		return new IngestGpxTrackFromHdfs(
+				this);
 	}
 
 }

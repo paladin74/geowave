@@ -1,7 +1,6 @@
 package mil.nga.giat.geowave.core.ingest;
 
 import mil.nga.giat.geowave.core.ingest.avro.AvroFormatPlugin;
-import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestFromHdfsPlugin;
 import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
 
@@ -29,11 +28,11 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	 *             If staging data is not supported (generally this implies that
 	 *             ingesting using map-reduce or kafka will not be supported)
 	 */
-	public StageToAvroPlugin<I> getStageToAvroPlugin()
-			throws UnsupportedOperationException;
+	// public StageToAvroPlugin<I> getStageToAvroPlugin()
+	// throws UnsupportedOperationException;
 
-//	public AvroFormatPlugin<I, O> getAvroFormatPlugin()
-//			throws UnsupportedOperationException;
+	public AvroFormatPlugin<I> getAvroFormatPlugin()
+			throws UnsupportedOperationException;
 
 	// /**
 	// * This plugin will be used by the ingestion framework to ingest Avro

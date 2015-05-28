@@ -19,7 +19,7 @@ import org.apache.avro.Schema;
  * @param <O>
  *            the type that represents each data entry being ingested
  */
-public interface IngestFromHdfsPlugin<I, O> 
+public interface IngestFromHdfsPlugin<I, O>
 {
 	/**
 	 * Returns a flag indicating to the ingestion framework whether it should
@@ -80,7 +80,7 @@ public interface IngestFromHdfsPlugin<I, O>
 	 *         implementation
 	 */
 	public Index[] getRequiredIndices();
-	
+
 	public Schema getAvroSchemaForHdfsType();
 
 }

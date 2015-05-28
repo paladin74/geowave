@@ -1,11 +1,15 @@
 package mil.nga.giat.geowave.core.ingest.avro;
 
-public interface AvroFormatPlugin<I, O> extends
-		AvroPluginBase<I>
+import mil.nga.giat.geowave.core.ingest.local.LocalPluginBase;
+import mil.nga.giat.geowave.core.store.index.Index;
+
+public interface AvroFormatPlugin<I> extends
+		AvroPluginBase<I>,
+		LocalPluginBase
 {
 
-	public StageToAvroPlugin<I> getStageToAvroPlugin();
+	public IngestWithAvroPlugin<I, ?> getIngestWithAvroPlugin();
 
-	public IngestWithAvroPlugin<I, O> getIngestWithAvroPlugin();
+	public Index[] getSupportedIndices();
 
 }

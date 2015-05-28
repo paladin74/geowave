@@ -12,10 +12,10 @@ import org.apache.avro.Schema;
  */
 public interface AvroPluginBase<T>
 {
-//	public Schema getAvroSchemaForHdfsType();
-	
+	// public Schema getAvroSchemaForHdfsType();
+
 	public Schema getAvroSchema();
-	
+
 	public T[] toAvroObjects(
 			File f );
 

@@ -47,5 +47,4 @@ public interface IngestFromKafkaPlugin<I, O> extends
 	 */
 	public Index[] getRequiredIndices();
 
-
 }
