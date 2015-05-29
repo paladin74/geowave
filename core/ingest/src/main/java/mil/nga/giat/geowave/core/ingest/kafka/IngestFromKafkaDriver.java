@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import kafka.consumer.Consumer;
 import kafka.consumer.ConsumerConfig;
@@ -18,8 +20,9 @@ import mil.nga.giat.geowave.core.ingest.AbstractIngestCommandLineDriver;
 import mil.nga.giat.geowave.core.ingest.AccumuloCommandLineOptions;
 import mil.nga.giat.geowave.core.ingest.GeoWaveData;
 import mil.nga.giat.geowave.core.ingest.IngestFormatPluginProviderSpi;
+import mil.nga.giat.geowave.core.ingest.IngestPluginBase;
 import mil.nga.giat.geowave.core.ingest.avro.AvroFormatPlugin;
-import mil.nga.giat.geowave.core.ingest.avro.IngestWithAvroPlugin;
+import mil.nga.giat.geowave.core.ingest.avro.GenericAvroSerializer;
 import mil.nga.giat.geowave.core.ingest.local.IngestRunData;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.DataStore;
@@ -37,22 +40,35 @@ import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Logger;
 
 /**
- * This class executes the ingestion of intermediate data from a Kafka topic
+ * /** This class executes the ingestion of intermediate data from a Kafka topic
  * into GeoWave.
  * 
- * @param <AbstractSimpleFeatureIngestPlugin>
+ * @param <I>
+ * @param <O>
  */
 public class IngestFromKafkaDriver<I, O> extends
 		AbstractIngestCommandLineDriver
 {
 	private final static Logger LOGGER = Logger.getLogger(IngestFromKafkaDriver.class);
+	private static int NUM_CONCURRENT_CONSUMERS = KafkaCommandLineOptions.DEFAULT_NUM_CONCURRENT_CONSUMERS;
+	private final static int DAYS_TO_AWAIT_COMPLETION = 999;
 	private KafkaCommandLineOptions kafkaOptions;
 	private AccumuloCommandLineOptions accumuloOptions;
+	private final GenericAvroSerializer<I> deserializer;
+	private static ExecutorService singletonExecutor;
 
 	public IngestFromKafkaDriver(
 			final String operation ) {
 		super(
 				operation);
+		deserializer = new GenericAvroSerializer<I>();
+	}
+
+	private static synchronized ExecutorService getSingletonExecutorService() {
+		if ((singletonExecutor == null) || singletonExecutor.isShutdown()) {
+			singletonExecutor = Executors.newFixedThreadPool(NUM_CONCURRENT_CONSUMERS);
+		}
+		return singletonExecutor;
 	}
 
 	@Override
@@ -79,29 +95,23 @@ public class IngestFromKafkaDriver<I, O> extends
 			for (final IngestFormatPluginProviderSpi<?, ?> pluginProvider : pluginProviders) {
 				final List<WritableDataAdapter<?>> adapters = new ArrayList<WritableDataAdapter<?>>();
 
-				AvroFormatPlugin<?> stageToAvroPlugin = null;
+				AvroFormatPlugin<?, ?> avroFormatPlugin = null;
 				try {
-					stageToAvroPlugin = pluginProvider.getAvroFormatPlugin();
-					//
-					// this plugin will perform the conversion from format to
-					// Avro objects
-					// the data is what will read from the topic and convert to
-					// object
-					//
-					if (stageToAvroPlugin == null) {
+					avroFormatPlugin = pluginProvider.getAvroFormatPlugin();
+					if (avroFormatPlugin == null) {
 						LOGGER.warn("Plugin provider for ingest type '" + pluginProvider.getIngestFormatName() + "' does not support ingest from HDFS");
 						continue;
 					}
 
-					IngestWithAvroPlugin<?, ?> ingestWithAvroPlugin = stageToAvroPlugin.getIngestWithAvroPlugin();
-					WritableDataAdapter<?>[] dataAdapters = ingestWithAvroPlugin.getDataAdapters(accumuloOptions.getVisibility());
+					final IngestPluginBase<?, ?> ingestWithAvroPlugin = avroFormatPlugin.getIngestWithAvroPlugin();
+					final WritableDataAdapter<?>[] dataAdapters = ingestWithAvroPlugin.getDataAdapters(accumuloOptions.getVisibility());
 					adapters.addAll(Arrays.asList(dataAdapters));
-					IngestRunData runData = new IngestRunData(
+					final IngestRunData runData = new IngestRunData(
 							adapters,
 							dataStore);
 
-					consumeFromTopic(
-							stageToAvroPlugin,
+					launchTopicConsumer(
+							avroFormatPlugin,
 							runData);
 
 				}
@@ -118,31 +128,125 @@ public class IngestFromKafkaDriver<I, O> extends
 					"Error in accessing Kafka stream",
 					e);
 		}
-
+		finally {
+			final ExecutorService executorService = getSingletonExecutorService();
+			executorService.shutdown();
+			try {
+				executorService.awaitTermination(
+						DAYS_TO_AWAIT_COMPLETION,
+						TimeUnit.DAYS);
+			}
+			catch (final InterruptedException e) {
+				LOGGER.error(
+						"Error waiting for submitted jobs to complete",
+						e);
+			}
+		}
 	}
 
 	private ConsumerConnector buildKafkaConsumer() {
-		final Properties props = new Properties();
-		props.put(
+		final Properties properties = new Properties();
+		properties.put(
 				"zookeeper.connect",
 				KafkaCommandLineOptions.getProperties().get(
 						"zookeeper.connect"));
-		props.put(
+		properties.put(
 				"group.id",
 				"0");
-		props.put(
+
+		properties.put(
 				"fetch.message.max.bytes",
-				"5000000");
+				KafkaCommandLineOptions.MAX_MESSAGE_FETCH_SIZE);
+
+		// setKafkaProperty(
+		// "fetch.message.max.bytes",
+		// properties,
+		// KafkaCommandLineOptions.MAX_MESSAGE_FETCH_SIZE);
+		// setKafkaProperty(
+		// "consumer.timeout.ms",
+		// properties);
+		// setKafkaProperty(
+		// "socket.timeout.ms",
+		// properties);
+
 		final ConsumerConnector consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(
-				props));
+				properties));
 
 		return consumer;
 	}
 
+	private void launchTopicConsumer(
+			final AvroFormatPlugin avroFormatPlugin,
+			final IngestRunData ingestRunData )
+			throws Exception {
+		final ExecutorService executorService = getSingletonExecutorService();
+		executorService.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					consumeFromTopic(
+							avroFormatPlugin,
+							ingestRunData);
+				}
+				catch (final Exception e) {
+					LOGGER.error(
+							"Error launching Kafka topic consumer for [" + kafkaOptions.getKafkaTopic() + "]",
+							e);
+				}
+			}
+		});
+	}
+
+	public void consumeFromTopic(
+			final AvroFormatPlugin avroFormatPlugin,
+			final IngestRunData ingestRunData )
+			throws Exception {
+
+		final ConsumerConnector consumer = buildKafkaConsumer();
+		if (consumer == null) {
+			throw new Exception(
+					"Kafka consumer connector is null, unable to create message streams");
+		}
+		final Map<String, Integer> topicCount = new HashMap<>();
+		topicCount.put(
+				kafkaOptions.getKafkaTopic(),
+				1);
+
+		final Map<String, List<KafkaStream<byte[], byte[]>>> consumerStreams = consumer.createMessageStreams(topicCount);
+		final List<KafkaStream<byte[], byte[]>> streams = consumerStreams.get(kafkaOptions.getKafkaTopic());
+		for (final KafkaStream stream : streams) {
+			final ConsumerIterator<byte[], byte[]> it = stream.iterator();
+			while (it.hasNext()) {
+				try {
+					final byte[] msg = it.next().message();
+
+					final I dataRecord = deserializer.deserialize(
+							msg,
+							avroFormatPlugin.getAvroSchema());
+
+					if (dataRecord != null) {
+						processMessage(
+								dataRecord,
+								ingestRunData,
+								avroFormatPlugin);
+					}
+				}
+				catch (final Exception e) {
+					LOGGER.error(
+							"Error processing message",
+							e);
+				}
+
+			}
+		}
+		consumer.shutdown();
+	}
+
 	protected void processMessage(
-			final Object dataRecord,
+			final I dataRecord,
 			final IngestRunData ingestRunData,
-			final AvroFormatPlugin<I> plugin )
+			final AvroFormatPlugin<I, O> plugin )
 			throws IOException {
 
 		final Index supportedIndex = accumuloOptions.getIndex(plugin.getSupportedIndices());
@@ -159,7 +263,7 @@ public class IngestFromKafkaDriver<I, O> extends
 					"Could not get index instance, getIndex() returned null");
 		}
 
-		IngestWithAvroPlugin ingestAvroPlugin = plugin.getIngestWithAvroPlugin();
+		final IngestPluginBase<I, O> ingestAvroPlugin = plugin.getIngestWithAvroPlugin();
 		try (CloseableIterator<GeoWaveData<O>> geowaveDataIt = ingestAvroPlugin.toGeoWaveData(
 				dataRecord,
 				idx.getId(),
@@ -176,45 +280,6 @@ public class IngestFromKafkaDriver<I, O> extends
 						geowaveData.getValue());
 			}
 		}
-
-	}
-
-	public void consumeFromTopic(
-			final AvroFormatPlugin stageToAvroPlugin,
-			final IngestRunData ingestRunData )
-			throws Exception {
-
-		ConsumerConnector consumer = buildKafkaConsumer();
-		if (consumer == null) {
-			throw new Exception(
-					"Kafka consumer connector is null, unable to create message streams");
-		}
-		final Map<String, Integer> topicCount = new HashMap<>();
-		topicCount.put(
-				kafkaOptions.getKafkaTopic(),
-				1);
-
-		final Map<String, List<KafkaStream<byte[], byte[]>>> consumerStreams = consumer.createMessageStreams(topicCount);
-		final List<KafkaStream<byte[], byte[]>> streams = consumerStreams.get(kafkaOptions.getKafkaTopic());
-		for (final KafkaStream stream : streams) {
-			final ConsumerIterator<byte[], byte[]> it = stream.iterator();
-			while (it.hasNext()) {
-				final byte[] msg = it.next().message();
-
-				final Object[] dataRecords = stageToAvroPlugin.toAvroObjects(msg);
-				if (dataRecords != null) {
-					for (Object dataRecord : dataRecords) {
-						processMessage(
-								dataRecord,
-								ingestRunData,
-								stageToAvroPlugin);
-					}
-				}
-
-			}
-		}
-		consumer.shutdown();
-
 	}
 
 	@Override
@@ -223,6 +288,8 @@ public class IngestFromKafkaDriver<I, O> extends
 			throws ParseException {
 		accumuloOptions = AccumuloCommandLineOptions.parseOptions(commandLine);
 		kafkaOptions = KafkaCommandLineOptions.parseOptions(commandLine);
+
+		NUM_CONCURRENT_CONSUMERS = kafkaOptions.getKafkaNumConsumers();
 	}
 
 	@Override

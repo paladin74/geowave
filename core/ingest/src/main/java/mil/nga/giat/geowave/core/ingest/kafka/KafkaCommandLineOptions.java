@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Logger;
@@ -22,27 +23,55 @@ public class KafkaCommandLineOptions
 		"serializer.class"
 	};
 
+	public static final Integer DEFAULT_NUM_CONCURRENT_CONSUMERS = 10;
+	public static final String MAX_MESSAGE_FETCH_SIZE = "5000000";
+
 	private final String kafkaTopic;
 	private final String kafkaPropertiesPath;
+	private final Integer kafkaNumConsumers;
+	private final Integer kafkaConsumerTimeout;
 	protected static Properties properties = new Properties();
 
 	public KafkaCommandLineOptions(
 			final String kafkaTopic,
-			final String kafkaPropertiesPath ) {
+			final String kafkaPropertiesPath,
+			final Integer kafkaNumConsumers,
+			final Integer kafkaConsumerTimeout ) {
 		this.kafkaTopic = kafkaTopic;
 		this.kafkaPropertiesPath = kafkaPropertiesPath;
+		this.kafkaNumConsumers = kafkaNumConsumers;
+		this.kafkaConsumerTimeout = kafkaConsumerTimeout;
 	}
 
 	public static void applyOptions(
 			final Options allOptions ) {
-		allOptions.addOption(
+		final Option topicOption = new Option(
 				"kafkatopic",
 				true,
 				"Kafka topic name where data will be emitted to");
-		allOptions.addOption(
+		topicOption.setRequired(true);
+
+		final Option propertiesOption = new Option(
 				"kafkaprops",
 				true,
 				"Properties file containing Kafka properties");
+		propertiesOption.setRequired(false);
+
+		final Option numberOfConcurrentConsumersOption = new Option(
+				"kafkanumconsumers",
+				true,
+				"Number of concurrent Kafka topics to ingest from, default is " + DEFAULT_NUM_CONCURRENT_CONSUMERS.toString());
+		numberOfConcurrentConsumersOption.setRequired(false);
+
+		final Option consumerTimeout = new Option(
+				"kafkaconsumertimeout",
+				true,
+				"The time interval (in milliseconds) to stop listening to a topic after the last successful message has been received.  This option is the same as setting consumer.timeout.ms in the Kafka properties or the System properties.");
+		consumerTimeout.setRequired(false);
+
+		allOptions.addOption(topicOption);
+		allOptions.addOption(propertiesOption);
+
 	}
 
 	public String getKafkaTopic() {
@@ -58,11 +87,21 @@ public class KafkaCommandLineOptions
 		return properties;
 	}
 
+	public Integer getKafkaNumConsumers() {
+		return kafkaNumConsumers;
+	}
+
+	public Integer getKafkaConsumerTimeout() {
+		return kafkaConsumerTimeout;
+	}
+
 	public static KafkaCommandLineOptions parseOptions(
 			final CommandLine commandLine )
 			throws ParseException {
 		final String kafkaTopic = commandLine.getOptionValue("kafkatopic");
 		final String kafkaPropertiesPath = commandLine.getOptionValue("kafkaprops");
+		final String strKafkaNumConsumers = commandLine.getOptionValue("kafkanumconsumers");
+		final String strKafkaConsumerTimeout = commandLine.getOptionValue("kafkaconsumertimeout");
 
 		boolean success = true;
 		if (kafkaTopic == null) {
@@ -86,6 +125,30 @@ public class KafkaCommandLineOptions
 			success = readAndVerifyProperties(kafkaPropertiesPath);
 		}
 
+		Integer kafkaNumberConsumersOption = DEFAULT_NUM_CONCURRENT_CONSUMERS;
+		if (strKafkaNumConsumers != null) {
+			try {
+				kafkaNumberConsumersOption = Integer.parseInt(strKafkaNumConsumers);
+			}
+			catch (final NumberFormatException e) {
+				LOGGER.error(
+						"kafkanumconsumers argument format is incorrect",
+						e);
+			}
+		}
+
+		Integer kafkaConsumerTimeout = DEFAULT_NUM_CONCURRENT_CONSUMERS;
+		if (strKafkaConsumerTimeout != null) {
+			try {
+				kafkaConsumerTimeout = Integer.parseInt(strKafkaConsumerTimeout);
+			}
+			catch (final NumberFormatException e) {
+				LOGGER.error(
+						"kafkaconsumertimeout argument format is incorrect",
+						e);
+			}
+		}
+
 		if (!success) {
 			throw new ParseException(
 					"Required option is missing");
@@ -93,7 +156,9 @@ public class KafkaCommandLineOptions
 
 		return new KafkaCommandLineOptions(
 				kafkaTopic,
-				kafkaPropertiesPath);
+				kafkaPropertiesPath,
+				kafkaNumberConsumersOption,
+				kafkaConsumerTimeout);
 	}
 
 	private static boolean readAndVerifyProperties(

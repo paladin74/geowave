@@ -1,4 +1,4 @@
-package mil.nga.giat.geowave.core.ingest.kafka;
+package mil.nga.giat.geowave.core.ingest.avro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
  * @param <T>
  *            - Base Avro class extended by all generated class files
  */
-public class GenericAvroSerializer<T extends SpecificRecordBase>
+public class GenericAvroSerializer<T>
 {
 	private final static Logger LOGGER = Logger.getLogger(GenericAvroSerializer.class);
 

@@ -18,33 +18,6 @@ import mil.nga.giat.geowave.core.ingest.local.LocalFileIngestPlugin;
  */
 public interface IngestFormatPluginProviderSpi<I, O>
 {
-	/**
-	 * This plugin will be used by the ingestion framework to stage intermediate
-	 * data from a local filesystem (for example to HDFS for map reduce ingest
-	 * or to kafka for kafka ingest).
-	 * 
-	 * @return The plugin for staging to avro if it is supported
-	 * @throws UnsupportedOperationException
-	 *             If staging data is not supported (generally this implies that
-	 *             ingesting using map-reduce or kafka will not be supported)
-	 */
-	// public StageToAvroPlugin<I> getStageToAvroPlugin()
-	// throws UnsupportedOperationException;
-
-	public AvroFormatPlugin<I> getAvroFormatPlugin()
-			throws UnsupportedOperationException;
-
-	// /**
-	// * This plugin will be used by the ingestion framework to ingest Avro
-	// encoded .
-	// *
-	// * @return The plugin for staging to avro if it is supported
-	// * @throws UnsupportedOperationException
-	// * If staging data is not supported (generally this implies that
-	// * ingesting using map-reduce or kafka will not be supported)
-	// */
-	// public IngestFromAvroPlugin<I, O> getIngestFromAvroPlugin()
-	// throws UnsupportedOperationException;
 
 	/**
 	 * This plugin will be used by the ingestion framework to read data from
@@ -100,4 +73,17 @@ public interface IngestFormatPluginProviderSpi<I, O>
 	 * @return The user-friendly full description for this data format
 	 */
 	public String getIngestFormatDescription();
+
+	/**
+	 * This plugin will be used by the ingestion framework to stage intermediate
+	 * data from a local filesystem (for example to HDFS for map reduce ingest
+	 * or to kafka for kafka ingest).
+	 * 
+	 * @return The plugin for staging to avro if it is supported
+	 * @throws UnsupportedOperationException
+	 *             If staging data is not supported (generally this implies that
+	 *             ingesting using map-reduce or kafka will not be supported)
+	 */
+	public AvroFormatPlugin<I, O> getAvroFormatPlugin()
+			throws UnsupportedOperationException;
 }

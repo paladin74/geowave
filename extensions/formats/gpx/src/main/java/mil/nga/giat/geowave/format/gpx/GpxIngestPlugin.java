@@ -19,10 +19,10 @@ import mil.nga.giat.geowave.adapter.vector.ingest.AbstractSimpleFeatureIngestPlu
 import mil.nga.giat.geowave.core.geotime.IndexType;
 import mil.nga.giat.geowave.core.index.ByteArrayId;
 import mil.nga.giat.geowave.core.ingest.GeoWaveData;
-import mil.nga.giat.geowave.core.ingest.avro.IngestWithAvroPlugin;
+import mil.nga.giat.geowave.core.ingest.IngestPluginBase;
+import mil.nga.giat.geowave.core.ingest.avro.GenericAvroSerializer;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithMapper;
 import mil.nga.giat.geowave.core.ingest.hdfs.mapreduce.IngestWithReducer;
-import mil.nga.giat.geowave.core.ingest.kafka.GenericAvroSerializer;
 import mil.nga.giat.geowave.core.store.CloseableIterator;
 import mil.nga.giat.geowave.core.store.adapter.WritableDataAdapter;
 import mil.nga.giat.geowave.core.store.data.field.FieldVisibilityHandler;
@@ -299,19 +299,7 @@ public class GpxIngestPlugin extends
 	}
 
 	@Override
-	public GpxTrack[] toAvroObjects(
-			byte[] avroBytes ) {
-		// TODO Auto-generated method stub
-		final GpxTrack track = serializer.deserialize(
-				avroBytes,
-				GpxTrack.getClassSchema());
-		return new GpxTrack[] {
-			track
-		};
-	}
-
-	@Override
-	public IngestWithAvroPlugin<GpxTrack, SimpleFeature> getIngestWithAvroPlugin() {
+	public IngestPluginBase<GpxTrack, SimpleFeature> getIngestWithAvroPlugin() {
 		return new IngestGpxTrackFromHdfs(
 				this);
 	}

@@ -12,14 +12,33 @@ import org.apache.avro.Schema;
  */
 public interface AvroPluginBase<T>
 {
-	// public Schema getAvroSchemaForHdfsType();
-
+	/**
+	 * Returns the Avro schema for the plugin
+	 * 
+	 * @return the Avro schema for the intermediate data
+	 */
 	public Schema getAvroSchema();
 
+	/**
+	 * Converts the supported file into an Avro encoded Java object.
+	 * 
+	 * @param file
+	 *            The file to convert to Avro
+	 * @return The Avro encoded Java object
+	 */
 	public T[] toAvroObjects(
-			File f );
+			File file );
 
-	public T[] toAvroObjects(
-			byte[] avroBytes );
+	// /**
+	// * Deserializes a byte[] containing serialized Avro Java object back into
+	// a
+	// * plain Java object.
+	// *
+	// * @param avroBytes
+	// * byte array containing the serialized Avro Java object
+	// * @return
+	// */
+	// public T[] toAvroObjects(
+	// byte[] avroBytes );
 
 }

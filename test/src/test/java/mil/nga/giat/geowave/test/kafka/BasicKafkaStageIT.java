@@ -12,20 +12,19 @@ public class BasicKafkaStageIT extends
 
 	protected static final String ZOOKEEPER_URL = "localhost:2181";
 
-	// @Test
-	// public void testBasicStageGpx()
-	// throws Exception {
-	//
-	// testKafkaStage(OSM_GPX_INPUT_DIR);
-	// }
-
 	@Test
 	public void testBasicIngestGpx()
 			throws Exception {
-
+		// connects to a Kafka topic
 		testKafkaIngest(
 				IndexType.SPATIAL_VECTOR,
 				OSM_GPX_INPUT_DIR);
-
 	}
+
+	@Test
+	public void testBasicStageGpx()
+			throws Exception {
+		testKafkaStage(OSM_GPX_INPUT_DIR);
+	}
+
 }

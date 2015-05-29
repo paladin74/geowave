@@ -20,7 +20,7 @@ public class GeoToolsVectorDataStoreIngestFormat implements
 	protected final CQLFilterOptionProvider cqlFilterOptionProvider = new CQLFilterOptionProvider();
 
 	@Override
-	public AvroFormatPlugin<Object> getAvroFormatPlugin() {
+	public AvroFormatPlugin<Object, SimpleFeature> getAvroFormatPlugin() {
 		// unsupported right now
 		throw new UnsupportedOperationException(
 				"GeoTools vector files cannot be ingested using intermediate avro files");

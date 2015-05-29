@@ -24,22 +24,9 @@ abstract public class AbstractSimpleFeatureIngestFormat<I> implements
 
 	abstract protected AbstractSimpleFeatureIngestPlugin<I> newPluginInstance();
 
-//	@Override
-//	public StageToAvroPlugin<I> getStageToAvroPlugin() {
-//		return getInstance();
-//	}
-	
-	public AvroFormatPlugin<I> getAvroFormatPlugin() {
+	public AvroFormatPlugin<I, SimpleFeature> getAvroFormatPlugin() {
 		return getInstance();
 	}
-	
-//	@Override
-//	public IngestFromAvroPlugin<I, ?> getIngestFromAvroPlugin() {
-//		return getInstance();
-//	}
-//	
-//	abstract protected IngestFromAvroPlugin<I, ?> getIngestFromAvroPlugin()
-//			throws UnsupportedOperationException;
 
 	@Override
 	public IngestFromHdfsPlugin<I, SimpleFeature> getIngestFromHdfsPlugin() {

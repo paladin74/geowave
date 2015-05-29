@@ -7,6 +7,7 @@ import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import mil.nga.giat.geowave.core.cli.GeoWaveMain;
 import mil.nga.giat.geowave.core.geotime.IndexType;
+import mil.nga.giat.geowave.core.ingest.kafka.IngestFromKafkaDriver;
 import mil.nga.giat.geowave.core.ingest.kafka.KafkaCommandLineOptions;
 import mil.nga.giat.geowave.core.store.index.Index;
 import mil.nga.giat.geowave.test.GeoWaveTestEnvironment;
@@ -45,17 +46,6 @@ abstract public class KafkaTestEnvironment extends
 	protected void testKafkaIngest(
 			IndexType indexType,
 			final String ingestFilePath ) {
-		// LOGGER.warn("Staging '" + ingestFilePath +
-		// "' to a Kafka topic - this may take several minutes...");
-		// String[] args = null;
-		// synchronized (MUTEX) {
-		// args = StringUtils.split(
-		// "-kafkastage -kafkatopic " + KAFKA_TEST_TOPIC + " -f gpx -b " +
-		// ingestFilePath,
-		// ' ');
-		// }
-		//
-		// GeoWaveMain.main(args);
 
 		LOGGER.warn("Ingesting '" + ingestFilePath + "' - this may take several minutes...");
 		final String[] args = StringUtils.split(
@@ -81,9 +71,7 @@ abstract public class KafkaTestEnvironment extends
 	private static KafkaConfig getKafkaConfig(
 			final String zkConnectString ) {
 		final Properties props = new Properties();
-		// props.put(
-		// "log.dir",
-		// DEFAULT_LOG_DIR.getAbsolutePath());
+
 		props.put(
 				"zookeeper.connect",
 				zkConnectString);

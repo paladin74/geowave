@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import mil.nga.giat.geowave.core.ingest.avro.AvroFormatPlugin;
-import mil.nga.giat.geowave.core.ingest.avro.StageToAvroPlugin;
 
 import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileWriter;

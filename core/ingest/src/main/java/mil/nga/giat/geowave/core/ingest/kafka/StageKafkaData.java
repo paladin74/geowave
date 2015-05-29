@@ -25,7 +25,7 @@ public class StageKafkaData<T extends SpecificRecordBase>
 
 	public Producer<String, T> getProducer(
 			final String typeName,
-			final AvroFormatPlugin<?> plugin ) {
+			final AvroFormatPlugin<?, ?> plugin ) {
 		return getProducerCreateIfNull(
 				typeName,
 				plugin);
@@ -33,7 +33,7 @@ public class StageKafkaData<T extends SpecificRecordBase>
 
 	private synchronized Producer<String, T> getProducerCreateIfNull(
 			final String typeName,
-			final AvroFormatPlugin<?> plugin ) {
+			final AvroFormatPlugin<?, ?> plugin ) {
 		if (!cachedProducers.containsKey(typeName)) {
 			final Properties props = KafkaCommandLineOptions.getProperties();
 			final ProducerConfig producerConfig = new ProducerConfig(
