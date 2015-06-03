@@ -113,4 +113,28 @@ public class FeatureBoundingBoxStatistics extends
 				reprojectedType,
 				transform);
 	}
+	
+	public String toString() {
+		StringBuffer buffer = new StringBuffer();
+		buffer.append(
+				"bbox[adapter=").append(
+				super.getDataAdapterId().getString());
+		buffer.append(
+				", field=").append(
+				getFieldName());
+		buffer.append(
+				", minX=").append(
+				minX);
+		buffer.append(
+				", maxX=").append(
+				maxX);
+		buffer.append(
+				", minY=").append(
+				minY);
+		buffer.append(
+				", maxY=").append(
+				maxY);
+		buffer.append("]");
+		return buffer.toString();
+	}
 }

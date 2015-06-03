@@ -58,4 +58,21 @@ public class FeatureNumericRangeStatistics extends
 				getFieldName());
 	}
 
+	public String toString() {
+		StringBuffer buffer = new StringBuffer();
+		buffer.append(
+				"range[adapter=").append(
+				super.getDataAdapterId().getString());
+		buffer.append(
+				", field=").append(
+				getFieldName());
+		buffer.append(
+				", min=").append(
+				super.getMin());
+		buffer.append(
+				", max=").append(
+				super.getMax());
+		buffer.append("]");
+		return buffer.toString();
+	}
 }

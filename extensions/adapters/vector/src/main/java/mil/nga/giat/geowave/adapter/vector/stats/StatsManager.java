@@ -86,6 +86,14 @@ public class StatsManager
 				statsList.add(new FeatureNumericRangeStatistics(
 						dataAdapter.getAdapterId(),
 						descriptor.getLocalName()));
+				statsList.add(new FeatureNumericHistogramStatistics(
+						dataAdapter.getAdapterId(),
+						descriptor.getLocalName()));
+			}
+			else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
+				statsList.add(new FeatureCountMinSketchStatistics(
+						dataAdapter.getAdapterId(),
+						descriptor.getLocalName()));
 			}
 			else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
 				statsList.add(new FeatureBoundingBoxStatistics(
@@ -107,6 +115,31 @@ public class StatsManager
 									descriptor.getLocalName())));
 		}
 	}
+	
+	/**
+	 * Supports replacement.
+	 * 
+	 * @param stats
+	 * @param visibilityHandler
+	 */
+	public void addStats(
+			DataStatistics<SimpleFeature> stats,
+			DataStatisticsVisibilityHandler<SimpleFeature> visibilityHandler ) {
+		int replaceStat = 0;
+		for (DataStatistics<SimpleFeature> currentStat : statsList) {
+			if (currentStat.getStatisticsId().equals(
+					stats.getStatisticsId())) {
+				break;
+			}
+			replaceStat++;
+		}
+		if (replaceStat < statsList.size()) this.statsList.remove(replaceStat);
+		this.statsList.add(stats);
+		this.visibilityHandlers.put(
+				stats.getStatisticsId(),
+				visibilityHandler);
+	}
+	
 
 	public ByteArrayId[] getSupportedStatisticsIds() {
 		final ByteArrayId[] statsIds = new ByteArrayId[statsList.size() + 1];
