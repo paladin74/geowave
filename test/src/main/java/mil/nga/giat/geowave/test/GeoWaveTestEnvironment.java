@@ -288,7 +288,7 @@ abstract public class GeoWaveTestEnvironment
 		@SuppressFBWarnings({
 			"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"
 		})
-		protected ExpectedResults(
+		public ExpectedResults(
 				final Set<Long> hashedCentroids,
 				final int count ) {
 			this.hashedCentroids = hashedCentroids;

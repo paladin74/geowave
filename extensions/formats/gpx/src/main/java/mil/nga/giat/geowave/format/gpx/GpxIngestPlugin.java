@@ -160,7 +160,7 @@ public class GpxIngestPlugin extends
 	public Schema getAvroSchema() {
 		return GpxTrack.getClassSchema();
 	}
-	
+
 	@Override
 	public Schema getAvroSchemaForHdfsType() {
 		return getAvroSchema();
@@ -223,6 +223,7 @@ public class GpxIngestPlugin extends
 			final String globalVisibility ) {
 		final InputStream in = new ByteArrayInputStream(
 				gpxTrack.getGpxfile().array());
+		System.out.println("processing "+gpxTrack.getTimestamp());
 		return new GPXConsumer(
 				in,
 				primaryIndexId,

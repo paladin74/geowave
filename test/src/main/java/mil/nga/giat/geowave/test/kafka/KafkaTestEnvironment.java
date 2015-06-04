@@ -3,13 +3,13 @@ package mil.nga.giat.geowave.test.kafka;
 import java.io.File;
 import java.util.Properties;
 
+import kafka.javaapi.producer.Producer;
+import kafka.producer.ProducerConfig;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import mil.nga.giat.geowave.core.cli.GeoWaveMain;
 import mil.nga.giat.geowave.core.geotime.IndexType;
-import mil.nga.giat.geowave.core.ingest.kafka.IngestFromKafkaDriver;
 import mil.nga.giat.geowave.core.ingest.kafka.KafkaCommandLineOptions;
-import mil.nga.giat.geowave.core.store.index.Index;
 import mil.nga.giat.geowave.test.GeoWaveTestEnvironment;
 
 import org.apache.commons.lang.StringUtils;
@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-abstract public class KafkaTestEnvironment extends
+abstract public class KafkaTestEnvironment<I> extends
 		GeoWaveTestEnvironment
 
 {
@@ -45,13 +45,13 @@ abstract public class KafkaTestEnvironment extends
 
 	protected void testKafkaIngest(
 			IndexType indexType,
-			final String ingestFilePath ) {
+			final String ingestFilePath) {
 
 		LOGGER.warn("Ingesting '" + ingestFilePath + "' - this may take several minutes...");
 		final String[] args = StringUtils.split(
 				"-kafkaingest -kafkatopic " + KAFKA_TEST_TOPIC + " -f gpx -z " + zookeeper + " -i " + accumuloInstance + " -u " + accumuloUser + " -p " + accumuloPassword + " -n " + TEST_NAMESPACE + " -dim " + (indexType.equals(IndexType.SPATIAL_VECTOR) ? "spatial" : "spatial-temporal"),
 				' ');
-		GeoWaveMain.main(args);
+		GeoWaveMain.main(args);				
 	}
 
 	@BeforeClass
@@ -86,6 +86,22 @@ abstract public class KafkaTestEnvironment extends
 				"5000000");
 		return new KafkaConfig(
 				props);
+	}
+	
+	protected Producer<String, I> setupProducer() {
+		final Properties props = new Properties();
+		props.put(
+				"metadata.broker.list",
+				"localhost:9092"); 
+									
+		props.put(
+				"serializer.class",
+				"mil.nga.giat.geowave.core.ingest.kafka.AvroKafkaEncoder");
+		final ProducerConfig config = new ProducerConfig(
+				props);
+
+		return new Producer<String, I>(
+				config);
 	}
 
 	@AfterClass

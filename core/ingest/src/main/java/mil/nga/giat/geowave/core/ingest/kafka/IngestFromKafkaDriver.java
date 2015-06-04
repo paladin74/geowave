@@ -3,6 +3,7 @@ package mil.nga.giat.geowave.core.ingest.kafka;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,11 +65,18 @@ public class IngestFromKafkaDriver<I, O> extends
 		deserializer = new GenericAvroSerializer<I>();
 	}
 
-	private static synchronized ExecutorService getSingletonExecutorService() {
+	public static synchronized ExecutorService getSingletonExecutorService() {
 		if ((singletonExecutor == null) || singletonExecutor.isShutdown()) {
 			singletonExecutor = Executors.newFixedThreadPool(NUM_CONCURRENT_CONSUMERS);
 		}
 		return singletonExecutor;
+	}
+
+	public static synchronized List<Runnable> stopExecutorService() {
+		if (singletonExecutor != null) {
+			return singletonExecutor.shutdownNow();
+		}
+		return null;
 	}
 
 	@Override
@@ -215,35 +223,46 @@ public class IngestFromKafkaDriver<I, O> extends
 
 		final Map<String, List<KafkaStream<byte[], byte[]>>> consumerStreams = consumer.createMessageStreams(topicCount);
 		final List<KafkaStream<byte[], byte[]>> streams = consumerStreams.get(kafkaOptions.getKafkaTopic());
+		System.out.println("listenting...");
+		int counter = 1;
 		for (final KafkaStream stream : streams) {
 			final ConsumerIterator<byte[], byte[]> it = stream.iterator();
 			while (it.hasNext()) {
 				try {
+					// System.out.println((new Date()).toString() +
+					// " got message " + counter);
 					final byte[] msg = it.next().message();
+					counter++;
 
 					final I dataRecord = deserializer.deserialize(
 							msg,
 							avroFormatPlugin.getAvroSchema());
 
 					if (dataRecord != null) {
-						processMessage(
-								dataRecord,
-								ingestRunData,
-								avroFormatPlugin);
+						try {
+							processMessage(
+									dataRecord,
+									ingestRunData,
+									avroFormatPlugin);
+						}
+						catch (Exception e) {
+							LOGGER.error("Error processing message: " + e.getMessage());
+						}
 					}
 				}
 				catch (final Exception e) {
 					LOGGER.error(
-							"Error processing message",
+							"Error consuming from Kafka topic",
 							e);
 				}
 
 			}
 		}
+
 		consumer.shutdown();
 	}
 
-	protected void processMessage(
+	synchronized protected void processMessage(
 			final I dataRecord,
 			final IngestRunData ingestRunData,
 			final AvroFormatPlugin<I, O> plugin )
