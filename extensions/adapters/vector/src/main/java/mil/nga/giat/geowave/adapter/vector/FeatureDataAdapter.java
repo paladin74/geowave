@@ -1,5 +1,6 @@
 package mil.nga.giat.geowave.adapter.vector;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.List;
 import mil.nga.giat.geowave.adapter.vector.plugin.GeoWaveGTDataStore;
 import mil.nga.giat.geowave.adapter.vector.plugin.visibility.AdaptorProxyFieldLevelVisibilityHandler;
 import mil.nga.giat.geowave.adapter.vector.plugin.visibility.JsonDefinitionColumnVisibilityManagement;
+import mil.nga.giat.geowave.adapter.vector.stats.StatsConfigurationCollection;
 import mil.nga.giat.geowave.adapter.vector.stats.StatsManager;
 import mil.nga.giat.geowave.adapter.vector.util.FeatureDataUtils;
 import mil.nga.giat.geowave.adapter.vector.utils.TimeDescriptors;
@@ -312,6 +314,15 @@ public class FeatureDataAdapter extends
 		final byte[] fieldVisibilityAtributeNameBytes = StringUtils.stringToBinary(visibilityAttributeName);
 		final byte[] visibilityManagementClassNameBytes = StringUtils.stringToBinary(fieldVisibilityManagement.getClass().getCanonicalName());
 		final byte[] axisBytes = StringUtils.stringToBinary(axis);
+		byte[] statsBytes = new byte[0];
+		try {
+			statsBytes = StringUtils.stringToBinary(StatsConfigurationCollection.toStatsString(persistedType));
+		}
+		catch (IOException e) {
+			LOGGER.error(
+					"Failure to encode statistics configuration",
+					e);
+		}
 
 		final TimeDescriptors timeDescriptors = getTimeDescriptors();
 		final byte[] timeAndRangeBytes = timeDescriptors.toBinary();
@@ -327,7 +338,7 @@ public class FeatureDataAdapter extends
 		final byte[] encodedTypeBytes = StringUtils.stringToBinary(encodedType);
 		// 25 bytes is the 6 four byte length fields and one byte for the
 		// version
-		final ByteBuffer buf = ByteBuffer.allocate(encodedTypeBytes.length + typeNameBytes.length + namespaceBytes.length + fieldVisibilityAtributeNameBytes.length + visibilityManagementClassNameBytes.length + timeAndRangeBytes.length + axisBytes.length + 25);
+		final ByteBuffer buf = ByteBuffer.allocate(encodedTypeBytes.length + typeNameBytes.length + namespaceBytes.length + fieldVisibilityAtributeNameBytes.length + visibilityManagementClassNameBytes.length + timeAndRangeBytes.length + axisBytes.length + statsBytes.length + 29);
 		buf.put(VERSION);
 		buf.putInt(typeNameBytes.length);
 		buf.putInt(namespaceBytes.length);
@@ -335,12 +346,14 @@ public class FeatureDataAdapter extends
 		buf.putInt(visibilityManagementClassNameBytes.length);
 		buf.putInt(timeAndRangeBytes.length);
 		buf.putInt(axisBytes.length);
+		buf.putInt(statsBytes.length);
 		buf.put(typeNameBytes);
 		buf.put(namespaceBytes);
 		buf.put(fieldVisibilityAtributeNameBytes);
 		buf.put(visibilityManagementClassNameBytes);
 		buf.put(timeAndRangeBytes);
 		buf.put(axisBytes);
+		buf.put(statsBytes);
 		buf.put(encodedTypeBytes);
 
 		return buf.array();
@@ -360,12 +373,14 @@ public class FeatureDataAdapter extends
 		final byte[] visibilityManagementClassNameBytes = new byte[buf.getInt()];
 		final byte[] timeAndRangeBytes = new byte[buf.getInt()];
 		final byte[] axisBytes = new byte[buf.getInt()];
+		final byte[] statsBytes = new byte[buf.getInt()];
 		buf.get(typeNameBytes);
 		buf.get(namespaceBytes);
 		buf.get(fieldVisibilityAtributeNameBytes);
 		buf.get(visibilityManagementClassNameBytes);
 		buf.get(timeAndRangeBytes);
 		buf.get(axisBytes);
+		buf.get(statsBytes);
 
 		final String typeName = StringUtils.stringFromBinary(typeNameBytes);
 		String namespace = StringUtils.stringFromBinary(namespaceBytes);
@@ -385,7 +400,7 @@ public class FeatureDataAdapter extends
 		}
 		// 25 bytes is the 6 four byte length fields and one byte for the
 		// version
-		final byte[] encodedTypeBytes = new byte[bytes.length - axisBytes.length - typeNameBytes.length - namespaceBytes.length - fieldVisibilityAtributeNameBytes.length - visibilityManagementClassNameBytes.length - timeAndRangeBytes.length - 25];
+		final byte[] encodedTypeBytes = new byte[bytes.length - axisBytes.length - typeNameBytes.length - namespaceBytes.length - fieldVisibilityAtributeNameBytes.length - visibilityManagementClassNameBytes.length - timeAndRangeBytes.length - statsBytes.length - 29];
 		buf.get(encodedTypeBytes);
 
 		final String encodedType = StringUtils.stringFromBinary(encodedTypeBytes);
@@ -408,6 +423,16 @@ public class FeatureDataAdapter extends
 						visibilityAttributeName).getUserData().put(
 						"visibility",
 						Boolean.TRUE);
+			}
+			try {
+				StatsConfigurationCollection.statsFromString(
+						persistedType,
+						StringUtils.stringFromBinary(statsBytes));
+			}
+			catch (IOException e) {
+				LOGGER.error(
+						"Unable to deserialized feature stats configuration",
+						e);
 			}
 			// advertise the reprojected type externally
 			return reprojectedType;

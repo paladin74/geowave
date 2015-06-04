@@ -113,7 +113,7 @@ public class FeatureBoundingBoxStatistics extends
 				reprojectedType,
 				transform);
 	}
-	
+
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(

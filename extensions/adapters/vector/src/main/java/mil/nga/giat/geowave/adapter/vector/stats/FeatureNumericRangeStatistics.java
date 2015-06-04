@@ -75,4 +75,17 @@ public class FeatureNumericRangeStatistics extends
 		buffer.append("]");
 		return buffer.toString();
 	}
+
+	public static class FeatureNumericRangeConfig implements
+			StatsConfig<SimpleFeature>
+	{
+		@Override
+		public DataStatistics<SimpleFeature> create(
+				final ByteArrayId dataAdapterId,
+				final String fieldName ) {
+			return new FeatureNumericRangeStatistics(
+					dataAdapterId,
+					fieldName);
+		}
+	}
 }

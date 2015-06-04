@@ -1,4 +1,4 @@
-package mil.nga.giat.geowave.datastore.accumulo.util;
+package mil.nga.giat.geowave.datastore.accumulo.cli;
 
 import mil.nga.giat.geowave.datastore.accumulo.AccumuloCommandLineOptions;
 
@@ -44,12 +44,13 @@ public class StatsCommandLineOptions
 	}
 
 	public static void applyOptions(
-			final Options allOptions ) {
+			final Options allOptions,
+			boolean typeRequired ) {
 		final Option type = new Option(
 				"type",
 				true,
 				"The name of the feature type to run stats on");
-		type.setRequired(true);
+		type.setRequired(typeRequired);
 		allOptions.addOption(type);
 
 		final Option auth = new Option(

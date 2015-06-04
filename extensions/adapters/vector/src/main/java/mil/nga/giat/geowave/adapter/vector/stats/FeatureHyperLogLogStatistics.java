@@ -13,6 +13,12 @@ import org.opengis.feature.simple.SimpleFeature;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
+/**
+ * Hyperloglog provides an estimated cardinality of the number of unique values
+ * for an attribute.
+ * 
+ * 
+ */
 public class FeatureHyperLogLogStatistics extends
 		AbstractDataStatistics<SimpleFeature> implements
 		FeatureStatistic
@@ -145,6 +151,41 @@ public class FeatureHyperLogLogStatistics extends
 				loglog.cardinality());
 		buffer.append("]");
 		return buffer.toString();
+	}
+
+	public static class FeatureHyperLogLogConfig implements
+			StatsConfig<SimpleFeature>
+	{
+		int precision = 16;
+
+		public FeatureHyperLogLogConfig() {
+
+		}
+
+		public FeatureHyperLogLogConfig(
+				int precision ) {
+			super();
+			this.precision = precision;
+		}
+
+		public int getPrecision() {
+			return precision;
+		}
+
+		public void setPrecision(
+				int precision ) {
+			this.precision = precision;
+		}
+
+		@Override
+		public DataStatistics<SimpleFeature> create(
+				final ByteArrayId dataAdapterId,
+				final String fieldName ) {
+			return new FeatureHyperLogLogStatistics(
+					dataAdapterId,
+					fieldName,
+					precision);
+		}
 	}
 
 }

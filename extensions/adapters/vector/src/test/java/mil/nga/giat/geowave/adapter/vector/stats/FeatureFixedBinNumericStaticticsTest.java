@@ -159,7 +159,7 @@ public class FeatureFixedBinNumericStaticticsTest
 
 		assertEquals(
 				.33,
-				stat.cdf(skewvalue),
+				stat.cdf(skewvalue - 1000),
 				0.01);
 		assertEquals(
 				30003,
@@ -319,8 +319,7 @@ public class FeatureFixedBinNumericStaticticsTest
 		System.out.println(stat.toString());
 
 	}
-	
-	
+
 	@Test
 	public void testMix2() {
 
@@ -345,7 +344,6 @@ public class FeatureFixedBinNumericStaticticsTest
 					next,
 					max);
 		}
-
 
 		assertEquals(
 				1.0,

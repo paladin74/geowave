@@ -11,15 +11,33 @@ import mil.nga.giat.geowave.core.store.adapter.statistics.DataStatistics;
 
 import org.opengis.feature.simple.SimpleFeature;
 
+/**
+ * 
+ * Fixed number of bins for a histogram. Unless configured, the range will
+ * expand dynamically, redistributing the data as necessary into the wider bins.
+ * 
+ * The advantage of constraining the range of the statistic is to ignore values
+ * outside the range, such as erroneous values. Erroneous values force extremes
+ * in the histogram. For example, if the expected range of values falls between
+ * 0 and 1 and a value of 10000 occurs, then a single bin contains the entire
+ * population between 0 and 1, a single bin represents the single value of
+ * 10000. If there are extremes in the data, then use
+ * {@link FeatureNumericHistogramStatistics} instead.
+ * 
+ * 
+ * The default number of bins is 32.
+ * 
+ */
 public class FeatureFixedBinNumericStatistics extends
 		AbstractDataStatistics<SimpleFeature> implements
 		FeatureStatistic
 {
 	public static final String STATS_TYPE = "ATT_BIN";
-	private long count[] = new long[23];
+	private long count[] = new long[32];
 	private long totalCount = 0;
 	private double minValue = Double.MAX_VALUE;
 	private double maxValue = Double.MIN_VALUE;
+	private boolean constrainedRange = false;
 
 	protected FeatureFixedBinNumericStatistics() {
 		super();
@@ -33,6 +51,35 @@ public class FeatureFixedBinNumericStatistics extends
 				composeId(
 						STATS_TYPE,
 						fieldName));
+	}
+
+	public FeatureFixedBinNumericStatistics(
+			final ByteArrayId dataAdapterId,
+			final String fieldName,
+			final int bins ) {
+		super(
+				dataAdapterId,
+				composeId(
+						STATS_TYPE,
+						fieldName));
+		count = new long[bins];
+	}
+
+	public FeatureFixedBinNumericStatistics(
+			final ByteArrayId dataAdapterId,
+			final String fieldName,
+			final int bins,
+			final double minValue,
+			final double maxValue ) {
+		super(
+				dataAdapterId,
+				composeId(
+						STATS_TYPE,
+						fieldName));
+		count = new long[bins];
+		this.minValue = minValue;
+		this.maxValue = maxValue;
+		constrainedRange = true;
 	}
 
 	public static final ByteArrayId composeId(
@@ -68,24 +115,23 @@ public class FeatureFixedBinNumericStatistics extends
 			final double val ) {
 		final double range = maxValue - minValue;
 		// one value
-		if (range <= 0.0) {
+		if (range <= 0.0 || totalCount == 0) {
 			return clip(val - minValue);
 		}
 
 		final int bin = Math.min(
 				(int) Math.floor((((val - minValue) / range) * count.length)),
 				count.length - 1);
-		if ((bin + 1) == count.length) {
-			return 1.0;
-		}
 
 		double c = 0;
 		final double perBinSize = binSize();
 		for (int i = 0; i < bin; i++) {
 			c += count[i];
 		}
-		final double percentageOfLastBin = (val - ((perBinSize * (bin)) + minValue)) / perBinSize;
-		c += (percentageOfLastBin * count[bin + 1]);
+		final double percentageOfLastBin = Math.min(
+				1.0,
+				(val - ((perBinSize * (bin)) + minValue)) / perBinSize);
+		c += (percentageOfLastBin * count[bin]);
 		return c / totalCount;
 	}
 
@@ -206,6 +252,7 @@ public class FeatureFixedBinNumericStatistics extends
 	private void add(
 			final long amount,
 			final double num ) {
+		if (Double.isNaN(num) || (constrainedRange && (num < minValue || num > maxValue))) return;
 		// entry of the the same value or first entry
 		if ((totalCount == 0) || (minValue == num)) {
 			count[0] += amount;
@@ -351,5 +398,66 @@ public class FeatureFixedBinNumericStatistics extends
 		buffer.deleteCharAt(buffer.length() - 1);
 		buffer.append("}]");
 		return buffer.toString();
+	}
+
+	public static class FeatureFixedBinConfig implements
+			StatsConfig<SimpleFeature>
+	{
+		double minValue = Double.MAX_VALUE;
+		double maxValue = Double.MIN_VALUE;
+		int bins;
+
+		public FeatureFixedBinConfig() {
+
+		}
+
+		public FeatureFixedBinConfig(
+				double minValue,
+				double maxValue,
+				int bins ) {
+			super();
+			this.minValue = minValue;
+			this.maxValue = maxValue;
+			this.bins = bins;
+		}
+
+		public double getMinValue() {
+			return minValue;
+		}
+
+		public void setMinValue(
+				double minValue ) {
+			this.minValue = minValue;
+		}
+
+		public double getMaxValue() {
+			return maxValue;
+		}
+
+		public void setMaxValue(
+				double maxValue ) {
+			this.maxValue = maxValue;
+		}
+
+		public int getBins() {
+			return bins;
+		}
+
+		public void setBins(
+				int bins ) {
+			this.bins = bins;
+		}
+
+		@Override
+		public DataStatistics<SimpleFeature> create(
+				final ByteArrayId dataAdapterId,
+				final String fieldName ) {
+			return new FeatureFixedBinNumericStatistics(
+					dataAdapterId,
+					fieldName,
+					this.bins,
+					this.minValue,
+					this.maxValue);
+		}
 	}
 }

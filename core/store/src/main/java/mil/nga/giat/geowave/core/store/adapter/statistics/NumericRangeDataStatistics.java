@@ -94,6 +94,7 @@ abstract public class NumericRangeDataStatistics<T> extends
 			}
 		}
 	}
+
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(

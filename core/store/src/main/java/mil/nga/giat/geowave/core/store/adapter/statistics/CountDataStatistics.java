@@ -94,7 +94,7 @@ public class CountDataStatistics<T> extends
 		count -= 1;
 
 	}
-	
+
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(

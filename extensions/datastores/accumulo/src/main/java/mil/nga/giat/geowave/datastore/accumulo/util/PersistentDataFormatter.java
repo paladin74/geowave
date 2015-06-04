@@ -1,6 +1,5 @@
 package mil.nga.giat.geowave.datastore.accumulo.util;
 
-
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.ParsePosition;

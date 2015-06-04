@@ -15,6 +15,11 @@ import org.HdrHistogram.DoubleHistogram;
 import org.HdrHistogram.Histogram;
 import org.opengis.feature.simple.SimpleFeature;
 
+/**
+ * Dynamic histogram provide very high accuracy for CDF and quantiles over the a
+ * numeric attribute.
+ * 
+ */
 public class FeatureNumericHistogramStatistics extends
 		AbstractDataStatistics<SimpleFeature> implements
 		FeatureStatistic
@@ -23,6 +28,9 @@ public class FeatureNumericHistogramStatistics extends
 	private DoubleHistogram positiveHistogram = new LocalDoubleHistogram();
 	private DoubleHistogram negativeHistogram = null;
 
+	// Max value is determined by the level of accuracy required, using a
+	// formula provided
+	// HdrHistogram
 	private double maxValue = Math.pow(
 			2,
 			63) / Math.pow(
@@ -321,5 +329,18 @@ public class FeatureNumericHistogramStatistics extends
 			super.setAutoResize(true);
 		}
 
+	}
+
+	public static class FeatureNumericHistogramConfig implements
+			StatsConfig<SimpleFeature>
+	{
+		@Override
+		public DataStatistics<SimpleFeature> create(
+				final ByteArrayId dataAdapterId,
+				final String fieldName ) {
+			return new FeatureNumericHistogramStatistics(
+					dataAdapterId,
+					fieldName);
+		}
 	}
 }

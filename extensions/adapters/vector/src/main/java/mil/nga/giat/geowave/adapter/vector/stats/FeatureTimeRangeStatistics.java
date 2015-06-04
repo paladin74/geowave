@@ -79,7 +79,7 @@ public class FeatureTimeRangeStatistics extends
 				this.dataAdapterId,
 				getFieldName());
 	}
-	
+
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));

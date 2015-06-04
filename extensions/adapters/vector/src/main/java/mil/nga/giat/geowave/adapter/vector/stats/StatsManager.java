@@ -77,21 +77,9 @@ public class StatsManager
 			final SimpleFeatureType reprojectedType,
 			final MathTransform transform ) {
 		for (final AttributeDescriptor descriptor : persistedType.getAttributeDescriptors()) {
+			int s = statsList.size();
 			if (TimeUtils.isTemporal(descriptor.getType().getBinding())) {
 				statsList.add(new FeatureTimeRangeStatistics(
-						dataAdapter.getAdapterId(),
-						descriptor.getLocalName()));
-			}
-			else if (Number.class.isAssignableFrom(descriptor.getType().getBinding())) {
-				statsList.add(new FeatureNumericRangeStatistics(
-						dataAdapter.getAdapterId(),
-						descriptor.getLocalName()));
-				statsList.add(new FeatureNumericHistogramStatistics(
-						dataAdapter.getAdapterId(),
-						descriptor.getLocalName()));
-			}
-			else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
-				statsList.add(new FeatureCountMinSketchStatistics(
 						dataAdapter.getAdapterId(),
 						descriptor.getLocalName()));
 			}
@@ -104,18 +92,51 @@ public class StatsManager
 						transform));
 			}
 			else {
-				continue;
+				if (descriptor.getUserData().containsKey(
+						"stats")) {
+					final String statsConfigJson = descriptor.getUserData().get(
+							"stats").toString();
+					try {
+						statsList.addAll(StatsConfigurationCollection.parse(
+								statsConfigJson,
+								dataAdapter.getAdapterId(),
+								descriptor.getLocalName()));
+					}
+					catch (Exception ex) {
+						LOGGER.error(
+								"Unable to configure statistics for field name " + descriptor.getLocalName(),
+								ex);
+					}
+				}
+				else if (Number.class.isAssignableFrom(descriptor.getType().getBinding())) {
+					statsList.add(new FeatureNumericRangeStatistics(
+							dataAdapter.getAdapterId(),
+							descriptor.getLocalName()));
+
+					statsList.add(new FeatureFixedBinNumericStatistics(
+							dataAdapter.getAdapterId(),
+							descriptor.getLocalName()));
+
+				}
+				else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
+					statsList.add(new FeatureCountMinSketchStatistics(
+							dataAdapter.getAdapterId(),
+							descriptor.getLocalName()));
+				}
 			}
-			// last one added to set visibility
-			visibilityHandlers.put(
-					statsList.get(
-							statsList.size() - 1).getStatisticsId(),
-					new FieldIdStatisticVisibility(
-							new ByteArrayId(
-									descriptor.getLocalName())));
+			for (int i = s; i < statsList.size(); i++)
+				// last one added to set visibility
+				visibilityHandlers.put(
+						statsList.get(
+								i).getStatisticsId(),
+						new FieldIdStatisticVisibility(
+								new ByteArrayId(
+										descriptor.getLocalName())));
+
 		}
+
 	}
-	
+
 	/**
 	 * Supports replacement.
 	 * 
@@ -139,7 +160,6 @@ public class StatsManager
 				stats.getStatisticsId(),
 				visibilityHandler);
 	}
-	
 
 	public ByteArrayId[] getSupportedStatisticsIds() {
 		final ByteArrayId[] statsIds = new ByteArrayId[statsList.size() + 1];

@@ -171,7 +171,7 @@ abstract public class BoundingBoxDataStatistics<T> extends
 			}
 		}
 	}
-	
+
 	public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append(
